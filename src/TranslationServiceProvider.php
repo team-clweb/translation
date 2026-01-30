@@ -3,7 +3,7 @@ namespace Waavi\Translation;
 
 use Illuminate\Translation\FileLoader as LaravelFileLoader;
 use Illuminate\Translation\TranslationServiceProvider as LaravelTranslationServiceProvider;
-use Waavi\Translation\Cache\RepositoryFactory as CacheRepositoryFactory;
+use Waavi\Translation\Cache\SimpleRepository as CacheRepository;
 use Waavi\Translation\Commands\CacheFlushCommand;
 use Waavi\Translation\Commands\FileLoaderCommand;
 use Waavi\Translation\Loaders\CacheLoader;
@@ -110,7 +110,10 @@ class TranslationServiceProvider extends LaravelTranslationServiceProvider
     {
         $this->app->singleton('translation.cache.repository', function ($app) {
             $cacheStore = $app['cache']->getStore();
-            return CacheRepositoryFactory::make($cacheStore, $app['config']->get('translator.cache.suffix'));
+            return new CacheRepository(
+                $cacheStore,
+                $app['config']->get('translator.cache.suffix', 'translation')
+            );
         });
     }
 
@@ -139,8 +142,6 @@ class TranslationServiceProvider extends LaravelTranslationServiceProvider
      */
     public function registerCacheFlusher()
     {
-        //$cacheStore      = $this->app['cache']->getStore();
-        //$cacheRepository = CacheRepositoryFactory::make($cacheStore, $this->app['config']->get('translator.cache.suffix'));
         $command = new CacheFlushCommand($this->app['translation.cache.repository'], $this->app['config']->get('translator.cache.enabled'));
 
         $this->app['command.translator:flush'] = $command;
